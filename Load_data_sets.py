@@ -39,6 +39,18 @@ def filter_unemployment():
 
     return df
 
+def isolate_Nuts_2(df):
+    removeList = []
+
+    for i in range(df.shape[0]):
+        currentIndex = float(re.findall("\\d+(?:\\.\\d+)?", str(df.index[i])))
+        if currentIndex < 9 or currentIndex >100:
+            removeList.append(i)
+    df = df.drop(df.index[removeList])
+
+
+
+
 
 
 
