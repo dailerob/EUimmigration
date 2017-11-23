@@ -1,4 +1,4 @@
-#file for loading data from unfiltered excel files
+#file for loading, filtering, and preping data from unfiltered excel files
 
 import numpy as np
 import pandas as pd
@@ -22,9 +22,9 @@ def pullRegion(rowVal):
     return rowVal[rowVal.rfind(',')+1:]
 
 #removes spare characters and formats NANs in EuroData
-def filter_unemployment():
-    print("loading unemployment")
-    wb = xw.Book("dataSets/Unfiltered Unemployment Rates.xlsx")
+def filter_dataset(setName):
+    print("loading dataSet")
+    wb = xw.Book(setName)
     currentSheet = wb.sheets['Sheet1']
 
     df = currentSheet.range('A1').options(pd.DataFrame,expand='table').value
@@ -77,6 +77,44 @@ def removeFixedEffects(df):
 
     return df
 
+
+#reads in unemployment and migration data, filters them, and then
+#lines them up by region
+def prepForModel():
+
+    unemploy = filter_dataset("dataSets/Unfiltered Unemployment Rates.xlsx")
+    unemploy = isolate_Nuts_2(unemploy)
+    unemploy = removeNaNs(unemploy)
+    unemploy = removeFixedEffects(unemploy)
+
+    migration = filter_dataset("dataSets/Net Migration Rates.xlsx")
+    migration = isolate_Nuts_2(migration)
+    migration = removeNaNs(migration)
+    migration = removeFixedEffects(migration)
+
+    migration = migration.drop(2016.0,axis=1)
+    unemploy = unemploy.drop(2016.0, axis=1)
+    unemploy = unemploy.drop(1999.0, axis=1)
+
+    xlist = []
+    ylist = []
+
+    for i in range(unemploy.shape[0]):
+        region = unemploy.index[i]
+        if region in migration.index:
+            migVals = migration.loc[region].values.tolist()
+            unVals = unemploy.loc[region].values.tolist()
+
+            #sanity check to make sure our data lines up
+            if not len(migVals) == len(unVals):
+                print(str(unemploy.index[i]))
+                print(str(len(migVals)))
+                print(str(len(unVals)))
+
+            xlist.extend(migVals)
+            ylist.extend(unVals)
+
+    return (xlist,ylist)
 
 
 
